@@ -25,7 +25,7 @@ class ProductCoupons extends Module
     public function install()
     {
         Configuration::updateValue('DISPLAY_LOCATION', 1);
-        return parent::install() && $this->registerHook('displayProductAdditionalInfo') && $this->registerHook('pstStockBar');
+        return parent::install() &&  $this->registerHook('displayHeader') && $this->registerHook('displayProductAdditionalInfo') && $this->registerHook('pstStockBar');
     }
 
 
