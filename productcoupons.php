@@ -158,13 +158,27 @@ class ProductCoupons extends Module
 
     public function hookDisplayProductAdditionalInfo($params)
     {
+        if (Configuration::get('DISPLAY_LOCATION') == 1) {
+            return $this->renderWidgetHook($params);
+        }
+    }
+    
+    public function hookPstStockBar($params)
+    {
+        if (Configuration::get('DISPLAY_LOCATION') == 2) {
+            return $this->renderWidgetHook($params);
+        }
+    }
+    
+    private function renderWidgetHook($params) {
         $product_id = $params['product']->id;
         $coupons = $this->fetchAvailableCouponsForProduct($product_id);
         $this->context->smarty->assign('available_coupons', $coupons);
-
+    
         return $this->display(__FILE__, 'views/templates/front/productcoupons.tpl');
     }
 
+    
     public function hookDisplayHeader()
     {
         $this->context->controller->registerStylesheet(
