@@ -170,8 +170,15 @@ class ProductCoupons extends Module
         }
     }
     
-    private function renderWidgetHook($params) {
-        $product_id = $params['product']->id;
+    public function renderWidgetHook($params) {
+        if (isset($params['id_product'])) {
+            $product_id = $params['id_product'];
+        } elseif (isset($params['product']['id_product'])) {
+            $product_id = $params['product']['id_product'];
+        } else {
+            return; // Jeśli nie możemy znaleźć ID produktu, zwróć pusty ciąg.
+        }
+    
         $coupons = $this->fetchAvailableCouponsForProduct($product_id);
         $this->context->smarty->assign('available_coupons', $coupons);
     
