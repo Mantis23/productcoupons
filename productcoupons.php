@@ -21,12 +21,16 @@ class ProductCoupons extends Module {
     }
 
     public function install() {
-        return parent::install() && $this->registerHook('displayProductAdditionalInfo') &&  $this->registerHook('displayHeader');
+        Configuration::updateValue('DISPLAY_LOCATION', 1);
+        return parent::install() && $this->registerHook('displayProductAdditionalInfo') && $this->registerHook('pstStockBar');
     }
+    
 
     public function uninstall() {
+        Configuration::deleteByName('DISPLAY_LOCATION');
         return parent::uninstall();
     }
+    
 
 public function fetchAvailableCouponsForProduct($product_id) {
     $cart_rules = CartRule::getCustomerCartRules($this->context->language->id, $this->context->customer->id, true, false);
@@ -64,6 +68,90 @@ public function fetchAvailableCouponsForProduct($product_id) {
 
     return $available_coupons;
 }
+
+public function getContent()
+{
+    $output = null;
+
+    if (Tools::isSubmit('submit'.$this->name))
+    {
+        $display_location = strval(Tools::getValue('DISPLAY_LOCATION'));
+        if (!$display_location || empty($display_location))
+            $output .= $this->displayError($this->l('Invalid Configuration value'));
+        else
+        {
+            Configuration::updateValue('DISPLAY_LOCATION', $display_location);
+            $output .= $this->displayConfirmation($this->l('Settings updated'));
+        }
+    }
+    return $output.$this->displayForm();
+}
+
+public function displayForm()
+{
+    $default_lang = (int)Configuration::get('PS_LANG_DEFAULT');
+    
+    $fields_form[0]['form'] = array(
+        'legend' => array(
+            'title' => $this->l('Settings'),
+        ),
+        'input' => array(
+            array(
+                'type' => 'radio',
+                'label' => $this->l('Display location'),
+                'name' => 'DISPLAY_LOCATION',
+                'is_bool' => true,
+                'values' => array(
+                    array(
+                        'id' => 'location_1',
+                        'value' => 1,
+                        'label' => $this->l('Display under displayProductAdditionalInfo')
+                    ),
+                    array(
+                        'id' => 'location_2',
+                        'value' => 2,
+                        'label' => $this->l('Display under pstStockBar')
+                    )
+                )
+            ),
+        ),
+        'submit' => array(
+            'title' => $this->l('Save'),
+            'class' => 'btn btn-default pull-right'
+        )
+    );
+    
+    $helper = new HelperForm();
+    
+    $helper->module = $this;
+    $helper->name_controller = $this->name;
+    $helper->token = Tools::getAdminTokenLite('AdminModules');
+    $helper->currentIndex = AdminController::$currentIndex.'&configure='.$this->name;
+    
+    $helper->default_form_language = $default_lang;
+    $helper->allow_employee_form_lang = $default_lang;
+    
+    $helper->title = $this->displayName;
+    $helper->show_toolbar = true;        
+    $helper->toolbar_scroll = true;      
+    $helper->submit_action = 'submit'.$this->name;
+    $helper->toolbar_btn = array(
+        'save' => array(
+            'desc' => $this->l('Save'),
+            'href' => AdminController::$currentIndex.'&configure='.$this->name.'&save'.$this->name.
+            '&token='.Tools::getAdminTokenLite('AdminModules'),
+        ),
+        'back' => array(
+            'href' => AdminController::$currentIndex.'&token='.Tools::getAdminTokenLite('AdminModules'),
+            'desc' => $this->l('Back to list')
+        )
+    );
+    
+    $helper->fields_value['DISPLAY_LOCATION'] = Configuration::get('DISPLAY_LOCATION');
+    
+    return $helper->generateForm($fields_form);
+}
+
 
     public function hookDisplayProductAdditionalInfo($params) {
         $product_id = $params['product']->id;
